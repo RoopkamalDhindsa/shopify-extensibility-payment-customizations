@@ -81,7 +81,7 @@ npm run shopify app function typegen
 ```
 
 ### 4. Replace the `src/run.js` file with the following code.
-This function logic appends a message to all delivery options if the shipping address state or province code is NC. You can adjust this to the state or province of your choice.
+This function logic will hide a payment method with a name containing `Cash on Delivery` when the cart total purchase amount is above `100`.
 
 ```shell
 // @ts-check
