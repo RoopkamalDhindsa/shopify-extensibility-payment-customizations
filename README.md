@@ -1,17 +1,17 @@
-# Shopify App Template - Remix
+# Shopify extensibility payment customization App Template - Remix
 
 This is a template for building a [Shopify app](https://shopify.dev/docs/apps/getting-started) using the [Remix](https://remix.run) framework.
 
 <!-- TODO: Uncomment this after we've started using the template in the CLI -->
 <!-- Rather than cloning this repo, you can use your preferred package manager and the Shopify CLI with [these steps](#installing-the-template). -->
 
-## Quick start
+## Step 1: Setup Shopify app and install it on dev store
 
 ### Prerequisites
 
 1. You must [download and install Node.js](https://nodejs.org/en/download/) if you don't already have it.
-1. You must [create a Shopify partner account](https://partners.shopify.com/signup) if you don’t have one.
-1. You must create a store for testing if you don't have one, either a [development store](https://help.shopify.com/en/partners/dashboard/development-stores#create-a-development-store) or a [Shopify Plus sandbox store](https://help.shopify.com/en/partners/dashboard/managing-stores/plus-sandbox-store).
+2. You must [create a Shopify partner account](https://partners.shopify.com/signup) if you don’t have one.
+3. You must create a store for testing if you don't have one, either a [development store](https://help.shopify.com/en/partners/dashboard/development-stores#create-a-development-store) or a [Shopify Plus sandbox store](https://help.shopify.com/en/partners/dashboard/managing-stores/plus-sandbox-store).
 
 <!-- TODO Make this section about using @shopify/app once it's added to the CLI. -->
 
@@ -19,198 +19,200 @@ This is a template for building a [Shopify app](https://shopify.dev/docs/apps/ge
 
 If you used the CLI to create the template, you can skip this section.
 
-Using yarn:
-
-```shell
-yarn install
-```
-
-Using npm:
+1. Run the below command to install the node module.
 
 ```shell
 npm install
 ```
 
-Using pnpm:
+2. If you received an error about fixing the npm audit then run the below commands as required:
 
 ```shell
-pnpm install
+npm audit fix
+```
+OR
+
+```shell
+npm audit fix --force
 ```
 
 ### Local Development
-
-Using yarn:
-
-```shell
-yarn dev
-```
-
-Using npm:
 
 ```shell
 npm run dev
 ```
 
-Using pnpm:
-
-```shell
-pnpm run setup
-pnpm run dev
-```
-
 Press P to open the URL to your app. Once you click install, you can start development.
 
-Local development is powered by [the Shopify CLI](https://shopify.dev/docs/apps/tools/cli). It logs into your partners account, connects to an app, provides environment variables, updates remote config, creates a tunnel and provides commands to generate extensions.
 
-### Authenticating and querying data
 
-To authenticate and query data you can use the `shopify` const that is exported from `/app/shopify.server.js`:
+## Step 2: Create the delivery customization function
 
-```js
-export async function loader({ request }) {
-  const { admin } = await shopify.authenticate.admin(request);
+### 1. Navigate to `extensions/delivery-customization-js`
+Press Ctrl+C to stop the app development environment and then, use cd to go to the exrtension's main folder
 
-  const response = await admin.graphql(`
-    {
-      products(first: 25) {
-        nodes {
-          title
-          description
-        }
+```shell
+cd extensions/delivery-customization-js
+```
+
+### 2. Replace the contents of `src/run.graphql` file with the following code.
+`run.graphql` defines the input for the function. You need the cart delivery groups, with the delivery state/province code and available delivery options.
+
+```shell
+query RunInput {
+  cart {
+    deliveryGroups {
+      deliveryAddress {
+        provinceCode
       }
-    }`);
-
-  const {
-    data: {
-      products: { nodes },
-    },
-  } = await response.json();
-
-  return json(nodes);
+      deliveryOptions {
+        handle
+        title
+      }
+    }
+  }
 }
 ```
 
-This template come preconfigured with examples of:
-
-1. Setting up your Shopify app in [/app/shopify.server.js](https://github.com/Shopify/shopify-app-template-remix/blob/main/app/shopify.server.js)
-2. Querying data using Graphql. Please see: [/app/routes/app.\_index.tsx](https://github.com/Shopify/shopify-app-template-remix/blob/main/app/routes/app._index.jsx).
-3. Responding to mandatory webhooks in [/app/routes/webhooks.jsx](https://github.com/Shopify/shopify-app-template-remix/blob/main/app/routes/webhooks.jsx)
-
-Please read the [documentation for @shopify/shopify-app-remix](https://www.npmjs.com/package/@shopify/shopify-app-remix#authenticating-admin-requests) to understand what other API's are available.
-
-## Deployment
-
-### Application Storage
-
-This template uses [Prisma](https://www.prisma.io/) to store session data, by default using an [SQLite](https://www.sqlite.org/index.html) database.
-The database is defined as a Prisma schema in `prisma/schema.prisma`.
-
-This use of SQLite works in production if your app runs as a single instance.
-The database that works best for you depends on the data your app needs and how it is queried.
-You can run your database of choice on a server yourself or host it with a SaaS company.
-Here’s a short list of databases providers that provide a free tier to get started:
-
-| Database   | Type             | Hosters                                                                                                                                                                                                                               |
-| ---------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| MySQL      | SQL              | [Digital Ocean](https://www.digitalocean.com/try/managed-databases-mysql), [Planet Scale](https://planetscale.com/), [Amazon Aurora](https://aws.amazon.com/rds/aurora/), [Google Cloud SQL](https://cloud.google.com/sql/docs/mysql) |
-| PostgreSQL | SQL              | [Digital Ocean](https://www.digitalocean.com/try/managed-databases-postgresql), [Amazon Aurora](https://aws.amazon.com/rds/aurora/), [Google Cloud SQL](https://cloud.google.com/sql/docs/postgres)                                   |
-| Redis      | Key-value        | [Digital Ocean](https://www.digitalocean.com/try/managed-databases-redis), [Amazon MemoryDB](https://aws.amazon.com/memorydb/)                                                                                                        |
-| MongoDB    | NoSQL / Document | [Digital Ocean](https://www.digitalocean.com/try/managed-databases-mongodb), [MongoDB Atlas](https://www.mongodb.com/atlas/database)                                                                                                  |
-
-To use one of these, you can use a different [datasource provider](https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#datasource) in your `schema.prisma` file, or a different [SessionStorage adapter package](https://github.com/Shopify/shopify-api-js/tree/main/docs/guides/session-storage.md).
-
-### Build
-
-Remix handles building the app for you, by running the command below with the package manager of your choice:
-
-Using yarn:
+### 3. Run the following command to regenerate types based on your input query
 
 ```shell
-yarn build
+npm run shopify app function typegen
 ```
 
-Using npm:
+### 4. Replace the `src/run.js` file with the following code.
+This function logic appends a message to all delivery options if the shipping address state or province code is NC. You can adjust this to the state or province of your choice.
 
 ```shell
-npm run build
+// @ts-check
+
+// Use JSDoc annotations for type safety
+/**
+* @typedef {import("../generated/api").RunInput} RunInput
+* @typedef {import("../generated/api").FunctionRunResult} FunctionRunResult
+* @typedef {import("../generated/api").Operation} Operation
+*/
+
+// The configured entrypoint for the 'purchase.delivery-customization.run' extension target
+/**
+* @param {RunInput} input
+* @returns {FunctionRunResult}
+*/
+export function run(input) {
+  // The message to be added to the delivery option
+  const message = "May be delayed due to weather conditions";
+
+  let toRename = input.cart.deliveryGroups
+    // Filter for delivery groups with a shipping address containing the affected state or province
+    .filter(group => group.deliveryAddress?.provinceCode &&
+      group.deliveryAddress.provinceCode == "NC")
+    // Collect the delivery options from these groups
+    .flatMap(group => group.deliveryOptions)
+    // Construct a rename operation for each, adding the message to the option title
+    .map(option => /** @type {Operation} */({
+      rename: {
+        deliveryOptionHandle: option.handle,
+        title: option.title ? `${option.title} - ${message}` : message
+      }
+    }));
+
+  // The @shopify/shopify_function package applies JSON.stringify() to your function result
+  // and writes it to STDOUT
+  return {
+    operations: toRename
+  };
+};
 ```
 
-Using pnpm:
+## Step 3: Preview the function on a development store
+
+### 1. Navigate back to your app root:
 
 ```shell
-pnpm run build
+cd ../..
 ```
 
-## Hosting
+### 2. Use the Shopify CLI dev command to start app preview:
 
-When you're ready to set up your app in production, you can follow [our deployment documentation](https://shopify.dev/docs/apps/deployment/web) to host your app on a cloud provider like [Heroku](https://www.heroku.com/) or [Fly.io](https://fly.io/).
-
-When you reach the step for [setting up environment variables](https://shopify.dev/docs/apps/deployment/web#set-env-vars), you also need to set the variable `NODE_ENV=production`.
-
-## Gotchas / Troubleshooting
-
-### Database tables don't exist
-
-If you run the app right after creating it, you'll get this error:
-
-```
-The table `main.Session` does not exist in the current database.
+```shell
+npm run shopify app dev
 ```
 
-This will happen when the Prisma database hasn't been created.
-You can solve this by running the `setup` script in your app.
+## Step 4: Create the delivery customization with GraphiQL
 
-### Navigating to other pages breaks
+### 1. Install the Shopify [GraphiQL app][(https://shopify-graphiql-app.shopifycloud.com/login) on your store. If you've already installed GraphiQL, then you should do so again to select the necessary access scopes for delivery customizations.
 
-In Remix apps, you can navigate to a different page either by adding an `<a>` tag, or using the `<Link>` component from `@remix-run/react`.
+### 2. In the GraphiQL app, in the API Version field, select the 2023-07 version.
 
-In Shopify Remix apps you should avoid using `<a>`. Use `<Link> `from `@remix-run/react` instead. This ensures that your user remains authenticated.
+### 3. Find the ID of your function by executing the following query:
 
-### Non Embedded
+```shell
+query {
+  shopifyFunctions(first: 25) {
+    nodes {
+      app {
+        title
+      }
+      apiType
+      title
+      id
+    }
+  }
+}
+```
+The result contains a node with your function's ID:
 
-Shopify apps are best when they are embedded into the Shopify Admin. This template is configured that way. If you have a reason to not embed your please make 2 changes:
+```shell
+{
+  "app": {
+    "title": "your-app-name-here"
+  },
+  "apiType": "delivery_customization",
+  "title": "delivery-customization",
+  "id": "YOUR_FUNCTION_ID_HERE"
+}
+```
 
-1. Remove the `<script/>` tag to App Bridge in `/app/routes/app.jsx`
-2. Remove any use of App Bridge APIs (`window.shopify`) from your code. By default, the only place that happens is in `/app/routes/app._index.jsx`
-3. Update the config for shopifyApp in `app/shopify.server.js`. Pass `isEmbedded: false`
+### 4. Execute the following mutation and replace `YOUR_FUNCTION_ID_HERE` with the ID of your function:
 
-## Benefits
+```shell
+mutation {
+  deliveryCustomizationCreate(deliveryCustomization: {
+    functionId: "YOUR_FUNCTION_ID_HERE"
+    title: "Add message to delivery options for state/province"
+    enabled: true
+  }) {
+    deliveryCustomization {
+      id
+    }
+    userErrors {
+      message
+    }
+  }
+}
+```
+You should receive a GraphQL response that includes the ID of the created delivery customization. If the response includes any messages under `userErrors`, then review the errors, check that your mutation and `functionId` are correct, and try the request again.
 
-Shopify apps are built on a variety of Shopify tools to create a great merchant experience.
+Tip*
+If you receive a Could not find Function error, then confirm the following:
+- The function ID is correct.
+- You've installed the app on your development store.
+- Development store preview is enabled.
 
-<!-- TODO: Uncomment this after we've updated the docs -->
-<!-- The [create an app](https://shopify.dev/docs/apps/getting-started/create) tutorial in our developer documentation will guide you through creating a Shopify app using this template. -->
 
-The Remix app template comes with the following out-of-the-box functionality:
+## Step 5: Test the delivery customization
 
-- [OAuth](https://github.com/Shopify/shopify-app-js/tree/main/packages/shopify-app-remix#authenticating-admin-requests): Installing the app and granting permissions
-- [GraphQL Admin API](https://github.com/Shopify/shopify-app-js/tree/main/packages/shopify-app-remix#using-the-shopify-admin-graphql-api): Querying or mutating Shopify admin data
-- [REST Admin API](https://github.com/Shopify/shopify-app-js/tree/main/packages/shopify-app-remix#using-the-shopify-admin-rest-api): Resource classes to interact with the API
-- [Webhooks](https://github.com/Shopify/shopify-app-js/tree/add_remix_package/packages/shopify-app-remix#authenticating-webhook-requests): Callbacks sent by Shopify when certain events occur
-- [AppBridge](https://shopify.dev/docs/apps/tools/app-bridge): This template uses the next generation of the Shopify App Bridge library.
-  - This library is currently in development and works in unison with the current Shopify App Bridge library.
-- [Polaris](https://polaris.shopify.com/): Design system that enables apps to create Shopify-like experiences
+### 1. From the Shopify admin, go to `Settings > Shipping and delivery`.
 
-## Tech Stack
+### 2. Check the `Delivery customizations` section. You should find the `Add message to delivery options for state/province` delivery customization that you created with GraphiQL.
 
-This template uses [Remix](https://remix.run). The following Shopify tools are also included to ease app development:
+### 3. Open your development store, build a cart, and proceed to checkout.
 
-- [Shopify App Remix](https://github.com/Shopify/shopify-app-js/blob/main/packages/shopify-app-remix/README.md) provides authentication and methods for interacting with Shopify APIs.
-- [Shopify App Bridge](https://shopify.dev/docs/apps/tools/app-bridge) allows your app to seamlessly integrate your app within Shopify's Admin.
-- [Polaris React](https://polaris.shopify.com/) is a powerful design system and component library that helps developers build high quality, consistent experiences for Shopify merchants.
-- [Webhooks](https://github.com/Shopify/shopify-app-js/tree/add_remix_package/packages/shopify-app-remix#authenticating-webhook-requests): Callbacks sent by Shopify when certain events occur
-- [Polaris](https://polaris.shopify.com/): Design system that enables apps to create Shopify-like experiences
+### 4. Enter a delivery address that doesn't use the specified state/province code. You shouldn't see any additional messaging on the delivery options.
 
-> **Note**: This template runs on JavaScript, but it's fully set up for [TypeScript](https://www.typescriptlang.org/).
-> If you want to create your routes using TypeScript, we recommend removing the `noImplicitAny` config from [`tsconfig.json`](/tsconfig.json)
+### 5. Change your shipping address to use your chosen state/province code. Your delivery options should now have the additional messaging.
 
-## Resources
+### 6. To [debug your function](https://shopify.dev/docs/apps/build/functions/monitoring-and-errors#debug-a-function), or view its output, you can review its logs in your [Partner Dashboard](https://partners.shopify.com/organizations).
 
-- [Remix Docs](https://remix.run/docs/en/v1)
-- [Shopify App Remix](https://github.com/Shopify/shopify-app-js/blob/release-candidate/packages/shopify-app-remix/README.md)
-- [Introduction to Shopify apps](https://shopify.dev/docs/apps/getting-started)
-- [App authentication](https://shopify.dev/docs/apps/auth)
-- [Shopify CLI](https://shopify.dev/docs/apps/tools/cli)
-- [App extensions](https://shopify.dev/docs/apps/app-extensions/list)
-- [Shopify Functions](https://shopify.dev/docs/api/functions)
-- [Getting started with internationalizing your app](https://shopify.dev/docs/apps/best-practices/internationalization/getting-started)
+# Next steps
+- [Add configuration](https://shopify.dev/docs/apps/build/checkout/delivery-shipping/delivery-options/add-configuration) to your delivery customization using metafields.
