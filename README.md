@@ -147,9 +147,9 @@ cd ../..
 npm run shopify app dev
 ```
 
-## Step 4: Create the delivery customization with GraphiQL
+## Step 4: Create the payment customization with GraphiQL
 
-### 1. Install the Shopify [GraphiQL app][(https://shopify-graphiql-app.shopifycloud.com/login) on your store. If you've already installed GraphiQL, then you should do so again to select the necessary access scopes for delivery customizations.
+### 1. Install the Shopify [GraphiQL app](https://shopify-graphiql-app.shopifycloud.com/login) on your store. If you've already installed GraphiQL, then you should do so again to select the necessary access scopes for delivery customizations.
 
 ### 2. In the GraphiQL app, in the API Version field, select the 2023-07 version.
 
@@ -200,7 +200,7 @@ mutation {
   }
 }
 ```
-You should receive a GraphQL response that includes the ID of the created delivery customization. If the response includes any messages under `userErrors`, then review the errors, check that your mutation and `functionId` are correct, and try the request again.
+You should receive a GraphQL response that includes the ID of the created payment customization. If the response includes any messages under `userErrors`, then review the errors, check that your mutation and `functionId` are correct, and try the request again.
 
 Tip*
 If you receive a Could not find Function error, then confirm the following:
