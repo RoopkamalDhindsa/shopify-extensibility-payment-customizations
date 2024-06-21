@@ -209,7 +209,7 @@ If you receive a Could not find Function error, then confirm the following:
 - Development store preview is enabled.
 
 
-## Step 5: Test the delivery customization
+## Step 5: Test the payment customization
 
 ### 1. From the Shopify admin, go to `Settings > Payments`.
 
