@@ -46,7 +46,7 @@ Press P to open the URL to your app. Once you click install, you can start devel
 
 
 
-## Step 2: Create the delivery customization function
+## Step 2: Create the payment customization function
 
 ### 1. Navigate to `extensions/payment-customization-js`
 Press Ctrl+C to stop the app development environment and then, use cd to go to the exrtension's main folder
