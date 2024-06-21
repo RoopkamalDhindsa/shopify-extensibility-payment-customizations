@@ -48,11 +48,11 @@ Press P to open the URL to your app. Once you click install, you can start devel
 
 ## Step 2: Create the delivery customization function
 
-### 1. Navigate to `extensions/delivery-customization-js`
+### 1. Navigate to `extensions/payment-customization-js`
 Press Ctrl+C to stop the app development environment and then, use cd to go to the exrtension's main folder
 
 ```shell
-cd extensions/delivery-customization-js
+cd extensions/payment-customization-js
 ```
 
 ### 2. Replace the contents of `src/run.graphql` file with the following code.
@@ -61,15 +61,15 @@ cd extensions/delivery-customization-js
 ```shell
 query RunInput {
   cart {
-    deliveryGroups {
-      deliveryAddress {
-        provinceCode
-      }
-      deliveryOptions {
-        handle
-        title
+    cost {
+      totalAmount {
+        amount
       }
     }
+  }
+  paymentMethods {
+    id
+    name
   }
 }
 ```
@@ -90,36 +90,45 @@ This function logic appends a message to all delivery options if the shipping ad
 /**
 * @typedef {import("../generated/api").RunInput} RunInput
 * @typedef {import("../generated/api").FunctionRunResult} FunctionRunResult
-* @typedef {import("../generated/api").Operation} Operation
 */
 
-// The configured entrypoint for the 'purchase.delivery-customization.run' extension target
+/**
+* @type {FunctionRunResult}
+*/
+const NO_CHANGES = {
+  operations: [],
+};
+
+// The configured entrypoint for the 'purchase.payment-customization.run' extension target
 /**
 * @param {RunInput} input
 * @returns {FunctionRunResult}
 */
 export function run(input) {
-  // The message to be added to the delivery option
-  const message = "May be delayed due to weather conditions";
+  // Get the cart total from the function input, and return early if it's below 100
+  const cartTotal = parseFloat(input.cart.cost.totalAmount.amount ?? "0.0");
+  if (cartTotal < 100) {
+    // You can use STDERR for debug logs in your function
+    console.error("Cart total is not high enough, no need to hide the payment method.");
+    return NO_CHANGES;
+  }
 
-  let toRename = input.cart.deliveryGroups
-    // Filter for delivery groups with a shipping address containing the affected state or province
-    .filter(group => group.deliveryAddress?.provinceCode &&
-      group.deliveryAddress.provinceCode == "NC")
-    // Collect the delivery options from these groups
-    .flatMap(group => group.deliveryOptions)
-    // Construct a rename operation for each, adding the message to the option title
-    .map(option => /** @type {Operation} */({
-      rename: {
-        deliveryOptionHandle: option.handle,
-        title: option.title ? `${option.title} - ${message}` : message
-      }
-    }));
+  // Find the payment method to hide
+  const hidePaymentMethod = input.paymentMethods
+    .find(method => method.name.includes("Cash on Delivery"));
+
+  if (!hidePaymentMethod) {
+    return NO_CHANGES;
+  }
 
   // The @shopify/shopify_function package applies JSON.stringify() to your function result
   // and writes it to STDOUT
   return {
-    operations: toRename
+    operations: [{
+      hide: {
+        paymentMethodId: hidePaymentMethod.id
+      }
+    }]
   };
 };
 ```
@@ -167,8 +176,8 @@ The result contains a node with your function's ID:
   "app": {
     "title": "your-app-name-here"
   },
-  "apiType": "delivery_customization",
-  "title": "delivery-customization",
+  "apiType": "payment_customization",
+  "title": "payment-customization",
   "id": "YOUR_FUNCTION_ID_HERE"
 }
 ```
@@ -177,12 +186,12 @@ The result contains a node with your function's ID:
 
 ```shell
 mutation {
-  deliveryCustomizationCreate(deliveryCustomization: {
-    functionId: "YOUR_FUNCTION_ID_HERE"
-    title: "Add message to delivery options for state/province"
-    enabled: true
+  paymentCustomizationCreate(paymentCustomization: {
+    title: "Hide payment method by cart total",
+    enabled: true,
+    functionId: "YOUR_FUNCTION_ID_HERE",
   }) {
-    deliveryCustomization {
+    paymentCustomization {
       id
     }
     userErrors {
@@ -202,17 +211,19 @@ If you receive a Could not find Function error, then confirm the following:
 
 ## Step 5: Test the delivery customization
 
-### 1. From the Shopify admin, go to `Settings > Shipping and delivery`.
+### 1. From the Shopify admin, go to `Settings > Payments`.
 
-### 2. Check the `Delivery customizations` section. You should find the `Add message to delivery options for state/province` delivery customization that you created with GraphiQL.
+### 2. Check the `Payment customizations` section. You should find the `Hide payment method by cart total` payment customization that you created with GraphiQL.
 
-### 3. Open your development store, build a cart, and proceed to checkout.
+### 3. From the `Manual payment methods` section, click `Add manual payment method` and then click `Cash on Delivery (COD)`.
 
-### 4. Enter a delivery address that doesn't use the specified state/province code. You shouldn't see any additional messaging on the delivery options.
+### 4. Click `Activate`.
 
-### 5. Change your shipping address to use your chosen state/province code. Your delivery options should now have the additional messaging.
+### 5. Open your development store and build a cart with a total (including shipping and tax) under 100. The `Cash on Delivery` payment method should display in checkout.
 
-### 6. To [debug your function](https://shopify.dev/docs/apps/build/functions/monitoring-and-errors#debug-a-function), or view its output, you can review its logs in your [Partner Dashboard](https://partners.shopify.com/organizations).
+### 6. Add additional items to your cart to raise the total over 100. Your payment function should now hide the `Cash on Delivery` payment option.
+
+### 7. To [debug your function](https://shopify.dev/docs/apps/build/functions/monitoring-and-errors#debug-a-function), or view its output, you can review its logs in your [Partner Dashboard](https://partners.shopify.com/organizations).
 
 # Next steps
-- [Add configuration](https://shopify.dev/docs/apps/build/checkout/delivery-shipping/delivery-options/add-configuration) to your delivery customization using metafields.
+- [Add configuration](https://shopify.dev/docs/apps/build/checkout/payments/add-configuration) to your payment customization using metafields.
