@@ -56,7 +56,7 @@ cd extensions/payment-customization-js
 ```
 
 ### 2. Replace the contents of `src/run.graphql` file with the following code.
-`run.graphql` defines the input for the function. You need the cart delivery groups, with the delivery state/province code and available delivery options.
+`run.graphql` defines the input for the function. You need the cart total and the available checkout payment methods.
 
 ```shell
 query RunInput {
